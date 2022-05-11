@@ -25,18 +25,18 @@ func main() {
 	// var s1 = slice1[2:3]
 
 	// map
-	m := make(map[int] string, 16)
+	m := make(map[int]string, 16)
 	//save
 	m[0] = "zero"
 	fmt.Println(m)
 	//read
 	str := m[0]
-	fmt.Println(m,str)
+	fmt.Println(m, str)
 	//del
-	delete(m, 0) 
+	delete(m, 0)
 	fmt.Println(m)
 	//exist
-	_,ok := m[0]
+	_, ok := m[0]
 	if ok {
 		fmt.Println("ok")
 	} else {
