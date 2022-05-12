@@ -4,12 +4,32 @@ import (
 	"fmt"
 	"here-we-go/src/util/maker"
 	"sync"
+	"sync/atomic"
 	"time"
 )
+
+func myatomic() {
+	num := int32(0)
+	atomic.AddInt32(&num, 1)
+	println(atomic.LoadInt32(&num))
+}
 
 func myMutex() {
 	n := 0
 	var mu sync.Mutex
+	var rw sync.RWMutex
+	var wg sync.WaitGroup
+	var on sync.Once
+
+	wg.Add(9)
+	wg.Done()
+
+	on.Do(func() {})
+
+	rw.RLock()
+	rw.RUnlock()
+	rw.RLocker().Lock()
+	rw.RUnlock()
 	cond := sync.NewCond(&mu)
 
 	mu.Lock()
