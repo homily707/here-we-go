@@ -1,8 +1,13 @@
-package main
+package base
 
-import "fmt"
+import (
+	"bufio"
+	"bytes"
+	"fmt"
+	"strings"
+)
 
-func myrune() {
+func mystr() {
 
 	//str
 	s := "一二三1234567"
@@ -26,5 +31,36 @@ func myrune() {
 		v := bytes[i]
 		fmt.Printf("%d : %c, %x, %d \n", i, v, v, v)
 	}
+}
 
+func mystrings() {
+
+	builder := strings.Builder{}
+	builder.Write([]byte("hello,"))
+	builder.WriteByte('c')
+	builder.WriteRune('d')
+	builder.WriteString("f")
+	fmt.Println(builder.String())
+
+	reader := strings.NewReader("hello")
+	fmt.Println("before read ,Len() : ", reader.Len())
+	readByte, err := reader.ReadByte()
+	if err == nil {
+		fmt.Print(string(readByte))
+		fmt.Print(" after read", reader.Len())
+	} else {
+		fmt.Errorf(" %s", err)
+	}
+}
+
+func mybytes() {
+	buffer := bytes.Buffer{}
+	buffer.WriteString("123456789")
+	_, _ = buffer.ReadByte()
+}
+
+func mybufio() {
+	reader := bufio.NewReader(strings.NewReader("hello"))
+	reader.ReadByte()
+	reader.Peek(1)
 }
