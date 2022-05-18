@@ -1,13 +1,13 @@
-package main
+package mytea
 
 import (
 	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
-	"here-we-go/src/mytea"
+	"testing"
 )
 
-func main() {
-	p := tea.NewProgram(mytea.NewMyModel())
+func Test_main(t *testing.T) {
+	p := tea.NewProgram(NewMyModel())
 	if err := p.Start(); err != nil {
 		fmt.Println("wrong")
 	}

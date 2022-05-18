@@ -9,3 +9,7 @@ func Test_mystr(t *testing.T) {
 func Test_myos(t *testing.T) {
 	myfile()
 }
+
+func Test_mynet(t *testing.T) {
+	httpserver()
+}
