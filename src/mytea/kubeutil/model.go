@@ -2,6 +2,7 @@ package kubeutil
 
 import (
 	"fmt"
+	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -22,50 +23,37 @@ var (
 	}()
 )
 
-type Model struct {
-	Screen ScreenModel
-}
+type ModelType int
 
-func (m Model) Init() tea.Cmd {
-	return nil
-}
-
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var (
-		cmd  tea.Cmd
-		cmds []tea.Cmd
-	)
-
-	// plane update
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		if k := msg.String(); k == "ctrl+c" || k == "q" || k == "esc" {
-			return m, tea.Quit
-		}
-	}
-
-	// screen Model update
-	m.Screen, cmd = m.Screen.Update(msg)
-	cmds = append(cmds, cmd)
-
-	return m, tea.Batch(cmds...)
-}
-
-func (m Model) View() string {
-	return m.Screen.View()
-}
+const (
+	INPUTMODE  ModelType = 1
+	VISUALMODE ModelType = 2
+)
 
 type ScreenModel struct {
-	Content  string
-	ready    bool
-	viewport viewport.Model
+	Content string
+	//InputText string
+	ready      bool
+	modelType  ModelType
+	viewport   viewport.Model
+	inputModel textinput.Model
+}
+
+func InitScreenModel() ScreenModel {
+	return ScreenModel{
+		Content:    "here we go",
+		ready:      false,
+		modelType:  INPUTMODE,
+		viewport:   viewport.Model{},
+		inputModel: textinput.New(),
+	}
 }
 
 func (m ScreenModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m ScreenModel) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
+func (m ScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
 		cmd  tea.Cmd
 		cmds []tea.Cmd
@@ -77,6 +65,13 @@ func (m ScreenModel) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 		footerHeight := lipgloss.Height(m.footerView())
 		inputHeight := lipgloss.Height(m.inputView())
 		verticalMarginHeight := headerHeight + footerHeight + inputHeight
+
+		if m.modelType == INPUTMODE {
+			m.inputModel.Focus()
+		} else if m.modelType == VISUALMODE {
+			m.inputModel.Reset()
+			m.inputModel.Blur()
+		}
 
 		if !m.ready {
 			// Since this program is using the full size of the viewport we
@@ -98,18 +93,51 @@ func (m ScreenModel) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 			m.viewport.Width = msg.Width
 			m.viewport.Height = msg.Height - verticalMarginHeight
 		}
+	case tea.KeyMsg:
+		if m.modelType == INPUTMODE {
+			switch msg.String() {
+			case "ctrl+c":
+				// quit
+				return m, tea.Quit
+			case "esc":
+				// change to visual
+				m.modelType = VISUALMODE
+				m.inputModel.Reset()
+				m.inputModel.Blur()
+			case "enter":
+				m.receiveInput(m.inputModel.Value())
+				m.inputModel.Reset()
+				m.viewport.GotoBottom()
+			}
+		} else if m.modelType == VISUALMODE {
+			switch msg.String() {
+			case "ctrl+c", "q", "esc":
+				return m, tea.Quit
+			case "i":
+				m.modelType = INPUTMODE
+			}
+		}
 	}
-
-	// Handle keyboard and mouse events in the viewport
+	// Handle keyboard and mouse events in the viewport and input
 	m.viewport, cmd = m.viewport.Update(msg)
+	cmds = append(cmds, cmd)
+	m.inputModel, cmd = m.inputModel.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
 }
 
+func (m *ScreenModel) receiveInput(inputText string) {
+	m.Content = m.Content + "\n" + inputText
+	m.viewport.SetContent(m.Content)
+}
+
+// ===================================================================
+// view
+
 func (m ScreenModel) View() string {
 	return fmt.Sprintf("%s\n%s\n%s\n%s", m.headerView(), m.viewport.View(), m.footerView(), m.inputView())
-	//return strsJoin("\n", m.headerView(), m.View(), m.footerView(), m.inputView())
+	//return stringsJoin("\n", m.headerView(), m.View(), m.footerView(), m.inputView())
 }
 
 func (m ScreenModel) headerView() string {
@@ -125,7 +153,7 @@ func (m ScreenModel) footerView() string {
 }
 
 func (m ScreenModel) inputView() string {
-	return ">               ___"
+	return m.inputModel.View()
 }
 
 func max(a, b int) int {
@@ -135,7 +163,7 @@ func max(a, b int) int {
 	return b
 }
 
-func strsJoin(joiner string, strs ...string) string {
+func stringsJoin(joiner string, strs ...string) string {
 	builder := strings.Builder{}
 	for i := 0; i < len(strs); i++ {
 		builder.WriteString(strs[i])
