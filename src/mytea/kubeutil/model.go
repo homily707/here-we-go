@@ -6,6 +6,10 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -40,6 +44,11 @@ type ScreenModel struct {
 }
 
 func InitScreenModel() ScreenModel {
+	home := os.Getenv("HOME")
+	kubeconfig := filepath.Join(home, ".kube", "config")
+	config, _ := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	clientset, _ := kubernetes.NewForConfig(config)
+	client.Clientset = *clientset
 	return ScreenModel{
 		Content:    "here we go",
 		ready:      false,
@@ -105,7 +114,11 @@ func (m ScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.inputModel.Reset()
 				m.inputModel.Blur()
 			case "enter":
-				m.receiveInput(m.inputModel.Value())
+				cmd = m.receiveInput(m.inputModel.Value())
+				if cmd != nil {
+					return m, cmd
+				}
+				cmds = append(cmds, cmd)
 				m.inputModel.Reset()
 				m.viewport.GotoBottom()
 			}
@@ -115,6 +128,8 @@ func (m ScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Quit
 			case "i":
 				m.modelType = INPUTMODE
+				m.inputModel.Focus()
+				return m, nil
 			}
 		}
 	}
@@ -127,9 +142,14 @@ func (m ScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *ScreenModel) receiveInput(inputText string) {
-	m.Content = m.Content + "\n" + inputText
+func (m *ScreenModel) receiveInput(inputText string) tea.Cmd {
+	if inputText == "q" {
+		inputText = "back"
+	}
+	result, cmd := client.execute(inputText)
+	m.Content = result
 	m.viewport.SetContent(m.Content)
+	return cmd
 }
 
 // ===================================================================
