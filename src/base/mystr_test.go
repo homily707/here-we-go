@@ -3,7 +3,8 @@ package base
 import "testing"
 
 func Test_mystr(t *testing.T) {
-	mystrings()
+	//mystrings()
+	uniqueEmail()
 }
 
 func Test_myos(t *testing.T) {

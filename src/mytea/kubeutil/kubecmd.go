@@ -9,49 +9,63 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 	"log"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
 
 type Client struct {
-	path      string
-	namespace string
-	input     string
 	kubernetes.Clientset
+	path            string
+	namespace       string
+	handleMapping   map[string]func(string) (string, tea.Cmd)
+	backwardMapping map[string]string
 }
 
-var client *Client = &Client{
-	path: "/",
-}
+func InitClient() *Client {
+	var client = Client{
+		path: "/",
+	}
 
-var handleMapping = map[string]func(string) (string, tea.Cmd){
-	"/":     nilCmdWrap(showNamespace),
-	"/func": nilCmdWrap(getNsAndShowFunction),
-	"/pod":  nilCmdWrap(getFuncAndShowPod),
-	"/log":  nilCmdWrap(logPod),
-	"/exec": execPod,
-}
+	client.handleMapping = map[string]func(string) (string, tea.Cmd){
+		"/":     nilCmdWrap(client.showNamespace),
+		"/func": nilCmdWrap(client.getNsAndShowFunction),
+		"/pod":  nilCmdWrap(client.getFuncAndShowPod),
+		"/log":  nilCmdWrap(client.logPod),
+		"/exec": client.execPod,
+	}
 
-var backwardMapping = map[string]string{
-	"/log":  "/pod",
-	"/exec": "/pod",
-	"/pod":  "/func",
-	"/func": "/",
-	"/":     "/",
+	client.backwardMapping = map[string]string{
+		"/log":  "/pod",
+		"/exec": "/pod",
+		"/pod":  "/func",
+		"/func": "/",
+		"/":     "/",
+	}
+
+	home := os.Getenv("HOME")
+	kubeconfig := filepath.Join(home, ".kube", "config")
+	config, _ := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	clientset, _ := kubernetes.NewForConfig(config)
+	client.Clientset = *clientset
+
+	return &client
 }
 
 func (client *Client) execute(order string) (string, tea.Cmd) {
 	if order == "back" {
-		client.path = backwardMapping[client.path]
+		client.path = client.backwardMapping[client.backwardMapping[client.path]]
 	}
-	f, ok := handleMapping[client.path]
+	f, ok := client.handleMapping[client.path]
 	if !ok {
 		return "i don't understand the order", nil
 	}
 	result, cmd := f(order)
-	return client.path + "\n" + result, cmd
+	return client.path + "  get input : " + order + "\n" + result, cmd
 }
 
 func nilCmdWrap(f func(string) string) func(string) (string, tea.Cmd) {
@@ -60,10 +74,10 @@ func nilCmdWrap(f func(string) string) func(string) (string, tea.Cmd) {
 	}
 }
 
-func showNamespace(s string) string {
+func (client *Client) showNamespace(s string) string {
 	build := strings.Builder{}
 	build.WriteString("choose a namespace\n")
-	for i, item := range listNameSpace() {
+	for i, item := range client.listNameSpace() {
 		build.WriteString(fmt.Sprintf("%d: %s \n", i, item.Name))
 	}
 
@@ -71,52 +85,56 @@ func showNamespace(s string) string {
 	return build.String()
 }
 
-func getNsAndShowFunction(s string) string {
-	i, err := strconv.Atoi(s)
-	if err != nil {
-		return "parse index error"
+func (client *Client) getNsAndShowFunction(s string) string {
+	if s != "back" {
+		i, err := strconv.Atoi(s)
+		if err != nil {
+			return "parse index error"
+		}
+		nsList := client.listNameSpace()
+		if i > len(nsList) {
+			return "index out of range"
+		}
+		ns := nsList[i].Name
+		client.namespace = ns
 	}
-	nsList := listNameSpace()
-	if i > len(nsList) {
-		return "index out of range"
-	}
-	ns := nsList[i].Name
 
-	client.namespace = ns
 	client.path = "/pod"
 	return "choose function \n" +
 		"1: log \n" + "2: exec"
 }
 
-func getFuncAndShowPod(s string) string {
-	i, err := strconv.Atoi(s)
-	if err != nil {
-		return "parse index error"
-	}
-	switch i {
-	case 1:
-		client.path = "/log"
-	case 2:
-		client.path = "/exec"
-	default:
-		return "no such selection"
+func (client *Client) getFuncAndShowPod(s string) string {
+	if s != "back" {
+		i, err := strconv.Atoi(s)
+		if err != nil {
+			return "parse index error"
+		}
+		switch i {
+		case 1:
+			client.path = "/log"
+		case 2:
+			client.path = "/exec"
+		default:
+			return "no such selection"
+		}
 	}
 
 	//show pod
 	build := strings.Builder{}
 	build.WriteString("choose a pod\n")
-	for j, item := range listPodByNs(client.namespace) {
+	for j, item := range client.listPodByNs(client.namespace) {
 		build.WriteString(fmt.Sprintf("%d: %s \n", j, item.Name))
 	}
 	return build.String()
 }
 
-func logPod(s string) string {
+func (client *Client) logPod(s string) string {
 	i, err := strconv.Atoi(s)
 	if err != nil {
 		return "parse index error"
 	}
-	nsList := listPodByNs(client.namespace)
+	nsList := client.listPodByNs(client.namespace)
 	if i > len(nsList) {
 		return "index out of range"
 	}
@@ -132,7 +150,7 @@ func logPod(s string) string {
 	return buf.String()
 }
 
-func listNameSpace() []v1.Namespace {
+func (client *Client) listNameSpace() []v1.Namespace {
 	list, err := client.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		log.Fatal(err)
@@ -140,17 +158,17 @@ func listNameSpace() []v1.Namespace {
 	return list.Items
 }
 
-func listPodByNs(ns string) []v1.Pod {
+func (client *Client) listPodByNs(ns string) []v1.Pod {
 	podList, _ := client.CoreV1().Pods(ns).List(context.TODO(), metav1.ListOptions{})
 	return podList.Items
 }
 
-func execPod(s string) (string, tea.Cmd) {
+func (client *Client) execPod(s string) (string, tea.Cmd) {
 	i, err := strconv.Atoi(s)
 	if err != nil {
 		return "parse index error", nil
 	}
-	nsList := listPodByNs(client.namespace)
+	nsList := client.listPodByNs(client.namespace)
 	if i > len(nsList) {
 		return "index out of range", nil
 	}

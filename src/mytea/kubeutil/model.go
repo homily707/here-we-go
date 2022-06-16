@@ -6,10 +6,6 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -41,20 +37,18 @@ type ScreenModel struct {
 	modelType  ModelType
 	viewport   viewport.Model
 	inputModel textinput.Model
+	client     *Client
 }
 
 func InitScreenModel() ScreenModel {
-	home := os.Getenv("HOME")
-	kubeconfig := filepath.Join(home, ".kube", "config")
-	config, _ := clientcmd.BuildConfigFromFlags("", kubeconfig)
-	clientset, _ := kubernetes.NewForConfig(config)
-	client.Clientset = *clientset
+
 	return ScreenModel{
 		Content:    "here we go",
 		ready:      false,
 		modelType:  INPUTMODE,
 		viewport:   viewport.Model{},
 		inputModel: textinput.New(),
+		client:     InitClient(),
 	}
 }
 
@@ -146,7 +140,7 @@ func (m *ScreenModel) receiveInput(inputText string) tea.Cmd {
 	if inputText == "q" {
 		inputText = "back"
 	}
-	result, cmd := client.execute(inputText)
+	result, cmd := m.client.execute(inputText)
 	m.Content = result
 	m.viewport.SetContent(m.Content)
 	return cmd

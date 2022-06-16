@@ -64,3 +64,17 @@ func mybufio() {
 	reader.ReadByte()
 	reader.Peek(1)
 }
+
+//leetcode 929
+func uniqueEmail() {
+	email := "abc.def+fdf@leetcode.com"
+	i := strings.Index(email, "@")
+	prefix := ([]byte)(email[:i])
+	builder := strings.Builder{}
+	for _, c := range prefix {
+		if string(c) != "+" && string(c) != "." {
+			builder.WriteByte(c)
+		}
+	}
+	fmt.Println(builder.String())
+}

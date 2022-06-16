@@ -83,7 +83,7 @@ func sumByChan() {
 				case v := <-numCh:
 					{
 						sum++
-						fmt.Println("worker ", i, " recieve", v)
+						fmt.Println("worker ", i, " receive", v)
 					}
 				default:
 					break
