@@ -26,6 +26,7 @@ func (bit *BinaryIndexTree) Sum(left int, right int) int {
 }
 
 func (bit *BinaryIndexTree) addInSum(index int, delta int) {
+	// this is necessary, the real data index starts from 1
 	index++
 	for index <= bit.Len {
 		bit.SumSlice[index] += delta
