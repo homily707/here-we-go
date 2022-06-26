@@ -1,4 +1,4 @@
-module github.com/homily707/gin/mockserver
+module github.com/homily707/here-we-go/gin/mockserver
 
 go 1.18
 
