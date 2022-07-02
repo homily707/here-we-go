@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gin-echo-svc
+spec:
+  ports:
+    - port: 8989
+      targetPort: 8989
+  selector:
+    app: dps-echo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dps-echo
+spec:
+  selector:
+    matchLabels:
+      app: dps-echo
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: dps-echo
+    spec:
+      containers:
+        - name: dps-echo
+          image: dps-registry.cn-hangzhou.cr.aliyuncs.com/dps/gin-echo
