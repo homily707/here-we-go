@@ -1,7 +1,12 @@
 package datastruct
 
-import "testing"
+import (
+	"fmt"
+	"sort"
+	"testing"
+)
 
 func Test_TreeMap(t *testing.T) {
-	redblack()
+	fmt.Print(string(byte('a') + 1))
+	sort.Sort()
 }
