@@ -2,7 +2,7 @@ package datastruct
 
 import (
 	"fmt"
-	redblacktree "github.com/emirpasic/gods/trees/redblacktree"
+	"github.com/emirpasic/gods/trees/redblacktree"
 )
 
 func redblack() {
@@ -21,4 +21,8 @@ func redblack() {
 	tree.Put(7, "c") // 1->a, 2->b, 3->c (in order)
 	fmt.Println(tree.String())
 
+	tree.Get(5)
+}
+
+func treeMap() {
 }

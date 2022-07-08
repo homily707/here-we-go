@@ -8,10 +8,10 @@ package datastruct
 //
 //type GeMonotoneDeque [T any] struct {
 //	data []T
-//	comparator func(a interface{},b interface{}) int
+//	comparator func(a face{},b face{}) int
 //}
 //
-//func (m *GeMonotoneDeque[T]) With(f func(a interface{},b interface{}) int) {
+//func (m *GeMonotoneDeque[T]) With(f func(a face{},b face{}) int) {
 //	m.comparator = f
 //}
 //

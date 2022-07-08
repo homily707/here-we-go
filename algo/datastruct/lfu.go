@@ -1,81 +1,135 @@
 package datastruct
 
-import "container/list"
+import (
+	"container/list"
+	"fmt"
+	"strconv"
+	"strings"
+)
 
-type Cache [T any] interface {
-	Add(key, value T) bool
-
-	Get(Key T) (value T, ok bool)
+type Cache interface {
+	fmt.Stringer
+	Put(key int, value interface{})
+	Get(key int) interface{}
+	Len() int
 }
 
-type LRUCache struct {
-	data map[any] any
-	freq map[int] *list.List
-	elements map[any]*list.Element
-	lf   int
-	cap  int
-	len  int
+type LFUCache struct {
+	data     Cache
+	minFreq  int
+	capacity int
+	freqList map[int]*list.List
+	elements map[int]*list.Element
 }
 
-type Node struct {
-	key   any
-	value any
+type node struct {
+	key   int
+	value interface{}
 	freq  int
 }
 
-func NewLRUCache(cap int) *LRUCache{
-	return &LRUCache{
-		data: map[any]any{},
-		freq: map[int]*list.List,
-		elements: map[any]*list.Element,
-		lf:   0,
-		cap:  cap,
-		len:  0,
+func NewLFUCache() LFUCache {
+	return LFUCache{
+		data:     nil,
+		minFreq:  0,
+		capacity: 5,
+		freqList: map[int]*list.List{},
+		elements: map[int]*list.Element{},
 	}
 }
 
-func (L *LRUCache) Add(key, value any) bool {
+func (lfu LFUCache) String() string {
+	builder := strings.Builder{}
+	for k, v := range lfu.freqList {
+		builder.WriteString(strconv.Itoa(k) + ": ")
+		for e := v.Front(); e != nil; e = e.Next() {
+			builder.WriteString(fmt.Sprintf("%v", e.Value.(node)))
+		}
+		builder.WriteString("\n")
+	}
+	return builder.String()
+}
+
+func (lfu LFUCache) Get(key int) interface{} {
+	e, ok := lfu.elements[key]
+	if !ok {
+		return nil
+	}
+	node := e.Value.(node)
+	lfu.freqList[node.freq].Remove(e)
+	node.freq++
+	lfu.insertIntoFreq(node)
+	return node.value
+}
+
+func (lfu LFUCache) Put(key int, value interface{}) {
+	if e, ok := lfu.elements[key]; ok {
+		node := e.Value.(node)
+		lfu.freqList[node.freq].Remove(e)
+		node.freq++
+		node.value = value
+
+		lfu.insertIntoFreq(node)
+		return
+	}
+
+	if lfu.Len() < lfu.capacity {
+		lfu.insertIntoFreq(node{
+			key:   key,
+			value: value,
+			freq:  1,
+		})
+		lfu.capacity++
+		return
+	}
+
+	if lfu.Len() == lfu.capacity {
+		l, ok := lfu.freqList[lfu.minFreq]
+		for !ok || l.Len() == 0 {
+			lfu.minFreq++
+			l, ok = lfu.freqList[lfu.minFreq]
+		}
+		l.Remove(l.Back())
+		lfu.insertIntoFreq(node{
+			key:   key,
+			value: value,
+			freq:  1,
+		})
+		lfu.minFreq = 1
+	}
+}
+
+func (lfu LFUCache) insertIntoFreq(n node) {
 	var e *list.Element
-
-	if _,ok := L.data[key]; ok != true {
-		L.data[key] = value
-		L.len ++
-		e = L.freq[1].PushFront(key)
-		L.elements[key] = e
+	if l, ok := lfu.freqList[n.freq]; ok {
+		e = l.PushFront(n)
+		lfu.elements[n.key] = e
 	} else {
-		L.data[key] = value
-		e = L.elements[key]
-
+		l = list.New()
+		lfu.freqList[n.freq] = l
+		e = l.PushFront(n)
+		lfu.elements[n.key] = e
 	}
-
-	return true
 }
 
-func (L *LRUCache) Get(Key any) (value any, ok bool) {
+func (lfu LFUCache) Len() int {
+	return len(lfu.elements)
+}
+
+func (lfu LFUCache) contains(key int) {
 
 }
 
-//type LRUCache [K any, T any] struct {
-//	data map[K]T
-//	freq map[int]list.List
-//	lf   int
-//	cap  int
-//}
-//
-//func NewLRUCache [K any, T any] (cap int) {
-//	return LRUCache [K,T] {
-//		data: map[K]T,
-//		freq: nil,
-//		lf:   0,
-//		cap:  0,
-//	}
-//}
-//
-//func (L LRUCache[K,T]) Add(key K, value T) bool {
-//
-//}
-//
-//func (L LRUCache[T]) Get(Key T) (value T, ok bool) {
-//
-//}
+type MapCache map[int]interface{}
 
+func (m MapCache) Put(key int, value interface{}) {
+	m[key] = value
+}
+
+func (m MapCache) Get(key int) interface{} {
+	return m[key]
+}
+
+func (m MapCache) Len() int {
+	return len(m)
+}

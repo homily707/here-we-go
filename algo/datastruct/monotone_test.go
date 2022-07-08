@@ -22,7 +22,7 @@ func Test_monotone(t *testing.T) {
 	deque.Println()
 
 	// LEETCODE 239
-	//deque := MonotoneDeque{comparator:func(a,b interface{}) int {
+	//deque := MonotoneDeque{comparator:func(a,b face{}) int {
 	//	return a.([]int)[1] - b.([]int)[1]
 	//}}
 	//ans := []int{}

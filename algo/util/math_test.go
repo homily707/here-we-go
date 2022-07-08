@@ -10,7 +10,6 @@ func Test_min(t *testing.T) {
 	a := [][]int{{5, 6}, {4, 7}, {4, 8}}
 	var r Task = a
 	sort.Sort(r)
-	fmt.Println(r)
 }
 
 type Task [][]int
