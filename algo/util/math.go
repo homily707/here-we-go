@@ -20,3 +20,11 @@ func abs(a int) int {
 	}
 	return a
 }
+
+func slice2d(m, n int) [][]int {
+	mn := make([][]int, m)
+	for i := range mn {
+		mn[i] = make([]int, n)
+	}
+	return mn
+}
