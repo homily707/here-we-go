@@ -42,15 +42,6 @@ func NewStreamViewModel(r io.Reader) StreamViewModel {
 }
 
 func (m StreamViewModel) Init() tea.Cmd {
-	go func() {
-		r := bufio.NewReader(m.r)
-		for {
-			line, _, err := r.ReadLine()
-			if err != nil {
-				m.pgm.Send(LineMsg(line))
-			}
-		}
-	}()
 	return nil
 }
 
@@ -62,11 +53,22 @@ func (m StreamViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case LineMsg:
-		m.lines = append(m.lines, string(msg))
+		m.lines = append(m.lines, string(msg)+"\n")
 		m.viewport.SetContent(strings.Join(m.lines, ""))
+		m.viewport.GotoBottom()
 	case tea.KeyMsg:
 		if k := msg.String(); k == "ctrl+c" || k == "q" || k == "esc" {
 			return m, tea.Quit
+		}
+		if k := msg.String(); k == "a" {
+			return m, func() tea.Msg {
+				return LineMsg([]byte("add\n"))
+			}
+		}
+		if k := msg.String(); k == "b" {
+			return m, func() tea.Msg {
+				return LineMsg([]byte("b\n"))
+			}
 		}
 	case tea.WindowSizeMsg:
 		headerHeight := lipgloss.Height(m.headerView())
@@ -128,6 +130,14 @@ func max(a, b int) int {
 	return b
 }
 
+// type nonstopReader struct{}
+
+// func (r nonstopReader) Read(p []byte) (n int, err error) {
+// 	p = []byte("hello\n")
+// 	time.Sleep(2 * time.Second)
+// 	return 5, err
+// }
+
 func main() {
 
 	r, w := io.Pipe()
@@ -135,7 +145,7 @@ func main() {
 	go func() {
 		for {
 			w.Write([]byte("hello\n"))
-			time.Sleep(5 * time.Second)
+			time.Sleep(2 * time.Second)
 		}
 	}()
 
@@ -144,10 +154,22 @@ func main() {
 		m,
 		tea.WithAltScreen(),       // use the full size of the terminal in its "alternate screen buffer"
 		tea.WithMouseCellMotion(), // turn on mouse support so we can track the mouse wheel
+		func(p *tea.Program) {
+			go func() {
+				r := bufio.NewReader(m.r)
+				for {
+					line, _, err := r.ReadLine()
+					if err != nil {
+						return
+					}
+					p.Send(LineMsg(line))
+				}
+			}()
+		},
 	)
 	m.pgm = p
 
-	if err := p.Start(); err != nil {
+	if _,err := p.Run(); err != nil {
 		fmt.Println("could not run program:", err)
 		os.Exit(1)
 	}
