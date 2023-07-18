@@ -7,25 +7,25 @@ import (
 )
 
 type choice struct {
-	key string   // 唯一确定标识
-	name string  // 展示的名字
+	key  string // 唯一确定标识
+	name string // 展示的名字
 }
 
 type Choices struct {
-	choices []choice
+	choices      []choice
 	currentIndex int
-	maxIndex int
+	maxIndex     int
 }
 
 func NewChoices() Choices {
 	return Choices{
-		maxIndex:     -1,
+		maxIndex: -1,
 	}
 }
 
-func (c *Choices) AddChoice(k,v string) {
+func (c *Choices) AddChoice(k, v string) {
 	c.choices = append(c.choices, choice{k, v})
-	c.maxIndex ++
+	c.maxIndex++
 }
 
 func (c Choices) Choose() string {
@@ -44,7 +44,7 @@ func (c *Choices) Next() bool {
 	if c.currentIndex == c.maxIndex {
 		return false
 	}
-	c.currentIndex ++
+	c.currentIndex++
 	return true
 }
 
@@ -52,7 +52,7 @@ func (c *Choices) Previous() bool {
 	if c.currentIndex == 0 {
 		return false
 	}
-	c.currentIndex --
+	c.currentIndex--
 	return true
 }
 
@@ -89,8 +89,8 @@ func NewSelectModel() SelectModel {
 	}
 }
 
-func (m *SelectModel) AddChoice(k,v string) {
-	m.choices.AddChoice(k,v)
+func (m SelectModel) AddChoice(k, v string) {
+	m.choices.AddChoice(k, v)
 }
 
 // Init implements tea.Model.
@@ -101,7 +101,7 @@ func (SelectModel) Init() tea.Cmd {
 // Update implements tea.Model.
 func (m SelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg :
+	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q", "esc":
 			return m, tea.Quit
