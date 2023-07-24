@@ -13,6 +13,8 @@ require (
 	k8s.io/client-go v0.27.3
 )
 
+require github.com/sahilm/fuzzy v0.1.0 // indirect
+
 require (
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
