@@ -35,9 +35,10 @@ func SimpleItemList(names []string) []list.Item {
 	return items
 }
 
-func SimpleItemListModel(names []string) ListModel {
+func SimpleItemListModel(title string, names []string) ListModel {
 	items := SimpleItemList(names)
 	list := list.New(items, SelectDelegate(), 0, 0)
+	list.Title = title
 	return ListModel{
 		Model: list,
 	}
@@ -47,6 +48,7 @@ func SelectDelegate() list.ItemDelegate {
 	delegate := list.NewDefaultDelegate()
 	delegate.ShowDescription = false
 	delegate.UpdateFunc = selectOne
+	delegate.SetSpacing(0)
 	return delegate
 }
 

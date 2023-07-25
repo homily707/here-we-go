@@ -15,9 +15,9 @@ func main() {
 	// model.AddRow("verbose", "日志等级", "-1")
 	// model.AddRow("retryPeriod", "重试周期", "60s")
 
-	namespace := models.SimpleItemListModel([]string{"dev-lmh", "t9k-system", "demo"})
-	resourceType := models.SimpleItemListModel([]string{"Notebook", "Pod", "Service"})
-	resourceName := models.SimpleItemListModel([]string{"test", "ssh-test", "deepspeed"})
+	namespace := models.SimpleItemListModel("请选择 Project", []string{"dev-lmh", "t9k-system", "demo"})
+	resourceType := models.SimpleItemListModel("请选择类型", []string{"Notebook", "Pod", "Service"})
+	resourceName := models.SimpleItemListModel("请选择目标", []string{"test", "ssh-test", "deepspeed"})
 	
 	option := models.NewForm()
 	option.AddRow("localport", "localport", "")
@@ -47,14 +47,10 @@ func main() {
 			}
 			execCmd := tea.ExecProcess(exec.Command(
 				"t9k-pf", "nb", "https://proxy.nc201.kube.tensorstack.net/t9k/notebooks/projects/dev-lmh/name/ssh/tree", port), nil)
-			return c, execCmd
+			return c, tea.Batch(tea.ClearScreen, execCmd)
 		})
-
-
-	model := models.Controller{}
-
 	
-	p := tea.NewProgram(model, tea.WithMouseCellMotion())
+	p := tea.NewProgram(pf, tea.WithMouseCellMotion())
 
 	// Run returns the model as a tea.Model.
 	p.Run()

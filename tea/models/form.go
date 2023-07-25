@@ -16,6 +16,7 @@ var (
 var _ tea.Model = (*Form)(nil)
 
 type Form struct {
+	submitted bool
 	status string
 	submit string
 	focusIndex int
@@ -61,6 +62,10 @@ func (m Form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
+	if m.submitted {
+		return m, tea.Quit
+	}
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -71,6 +76,7 @@ func (m Form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "shift+tab", "up":
 			m.focusIndex--
 		case "enter":
+			m. submitted = true
 			if m.focusIndex == len(m.rowKey) {
 				m.status = "Submitted"
 				submitMap := make(map[string]string)
@@ -111,6 +117,9 @@ func (m Form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Form) View() string {
+	if m.submitted {
+		return ""
+	}
 	var builder strings.Builder
 
 	builder.WriteString(m.status)

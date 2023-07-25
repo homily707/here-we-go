@@ -22,6 +22,7 @@ func EmptyController() Controller {
 		nextWhenSelect: make(map[string]string),
 		funcWhenSelect: make(map[string]SelectFunc),
 		funcWhenSubmit: make(map[string]SubmitFunc),
+		storedValue:    make(map[string]interface{}),
 	}
 }
 
@@ -86,6 +87,8 @@ func (m Controller) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.modelMap[k] = listModel
 			}
 		}
+	case TransferMsg:
+		m.currentModel = string(msg)
 	case tea.KeyMsg:
 		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
