@@ -39,5 +39,5 @@ func (engine *Engine) HandleContext(c *Context) {
 }
 
 func (engine *Engine) Handler() http.Handler {
-
+	return nil
 }
