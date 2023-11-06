@@ -32,5 +32,3 @@ type RouterGroup struct {
 	engine   *Engine
 	root     bool
 }
-
-var _ IRouter = &RouterGroup{}
