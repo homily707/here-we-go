@@ -13,11 +13,10 @@ func main() {
 	c.Run()
 }
 
-func syncObsidian () {
+func syncObsidian() {
 	output := "/Users/liminghao/log/sync_obsidian"
 	cmd := exec.Command("sh", "/Users/liminghao/codes/homily707/notes/run_sync.sh", output)
 	if err := cmd.Start(); err != nil {
 		fmt.Print(err)
 	}
-} 
-
+}
